@@ -313,8 +313,26 @@ export default function ChatInterface() {
 
   const isCapturingLead = leadCaptureStep !== 'completed';
   const currentLeadCaptureField = isCapturingLead
-    ? leadCaptureStep === 'awaitingName' ? 'name' : 'phone'
+    ? leadCaptureStep === 'awaitingName' ? 'name' : leadCaptureStep === 'awaitingPhone' ? 'phone' : undefined
     : undefined;
+
+  // Handle lead capture step transitions
+  useEffect(() => {
+    if (messages.length > 0 && !isCapturingLead) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'bot') {
+        // Check if the last bot message indicates interest in subscription
+        const subscriptionKeywords = ['subscribe', 'subscription', 'plan', 'service'];
+        const interestDetected = subscriptionKeywords.some(keyword => 
+          lastMessage.content.toLowerCase().includes(keyword)
+        );
+
+        if (interestDetected && !leadCaptureStep) {
+          setLeadCaptureStep('awaitingName');
+        }
+      }
+    }
+  }, [messages, leadCaptureStep]);
 
   if (isInitializing) {
     return (

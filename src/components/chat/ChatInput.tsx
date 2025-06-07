@@ -62,9 +62,15 @@ export default function ChatInput({
         instance.continuous = false;
         instance.interimResults = false;
 
-        instance.onresult = (event) => {
+        instance.onresult = async (event) => {
           const transcript = event.results[0][0].transcript;
-          setInputValue((prev) => (prev ? prev.trim() + ' ' : '') + transcript);
+          if (transcript.trim()) {
+            // Clear input field
+            setInputValue('');
+            
+            // Send the transcription directly for processing
+            onSendMessage(transcript);
+          }
         };
 
         instance.onerror = (event) => {
@@ -88,6 +94,8 @@ export default function ChatInput({
 
         instance.onend = () => {
           setIsRecording(false);
+          // Clear input field when recording ends
+          setInputValue('');
         };
         recognitionRef.current = instance;
       }
