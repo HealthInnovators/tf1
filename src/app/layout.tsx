@@ -3,9 +3,8 @@ import { Poppins, PT_Sans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"; // Import Toaster
 
-// It's generally better to use next/font for performance and optimization
 const poppins = Poppins({
-  subsets: ['latin'],
+  subsets: ['latin', 'latin-ext'],
   display: 'swap',
   variable: '--font-poppins',
   weight: ['400', '500', '600', '700'],
@@ -31,11 +30,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.variable} ${ptSans.variable}`}>
       <head>
-        {/* Google Fonts links are kept as per instruction, but next/font is preferred */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
         {children}

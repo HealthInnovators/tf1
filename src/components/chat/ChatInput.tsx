@@ -1,20 +1,19 @@
-
 'use client';
 
-import { useState, type FormEvent, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, FormEvent } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { SendHorizontal, Mic, Languages, Loader2, MicOff } from 'lucide-react';
-import type { Language } from '@/lib/types';
+import { SendHorizontal, Mic, Loader2, MicOff } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { useToast } from "@/hooks/use-toast";
-import { LEAD_CAPTURE_NAME_PLACEHOLDER_EN, LEAD_CAPTURE_NAME_PLACEHOLDER_TE, LEAD_CAPTURE_PHONE_PLACEHOLDER_EN, LEAD_CAPTURE_PHONE_PLACEHOLDER_TE } from '@/lib/constants';
+} from "@/components/ui/tooltip";
 
+// Assuming 'Language' is a type defined elsewhere, e.g., export type Language = 'en' | 'te';
+type Language = 'en' | 'te';
 
 interface ChatInputProps {
   onSendMessage: (text: string) => void;
@@ -22,7 +21,9 @@ interface ChatInputProps {
   onLanguageChange: (lang: Language) => void;
   isSending: boolean;
   isCapturingLead: boolean;
-  leadCaptureField?: 'name' | 'phone'; // New prop
+  isRecording: boolean;
+  setIsRecording: (newState: boolean) => void;
+  leadCaptureField?: string;
 }
 
 export default function ChatInput({
@@ -31,85 +32,144 @@ export default function ChatInput({
   onLanguageChange,
   isSending,
   isCapturingLead,
-  leadCaptureField, // New prop
+  isRecording,
+  setIsRecording,
 }: ChatInputProps) {
   const [inputValue, setInputValue] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const { toast } = useToast();
-  const [inputPlaceholder, setInputPlaceholder] = useState('');
 
+  // Effect 1: Manages the CREATION and CLEANUP of the SpeechRecognition instance.
+  // It only re-runs if the language changes.
   useEffect(() => {
-    if (isCapturingLead) {
-      if (leadCaptureField === 'name') {
-        setInputPlaceholder(currentLanguage === 'en' ? LEAD_CAPTURE_NAME_PLACEHOLDER_EN : LEAD_CAPTURE_NAME_PLACEHOLDER_TE);
-      } else if (leadCaptureField === 'phone') {
-        setInputPlaceholder(currentLanguage === 'en' ? LEAD_CAPTURE_PHONE_PLACEHOLDER_EN : LEAD_CAPTURE_PHONE_PLACEHOLDER_TE);
-      } else {
-        setInputPlaceholder(currentLanguage === 'en' ? "Please enter your details..." : "దయచేసి మీ వివరాలను నమోదు చేయండి...");
-      }
-    } else {
-      setInputPlaceholder(currentLanguage === 'en' ? 'Type your message or use mic...' : 'మీ సందేశాన్ని టైప్ చేయండి లేదా మైక్ ఉపయోగించండి...');
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') {
+      console.warn('Not in browser environment');
+      return;
     }
-  }, [currentLanguage, isCapturingLead, leadCaptureField]);
 
+    // Check if SpeechRecognition is supported
+    if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+      toast({
+        title: 'Voice Recognition Not Supported',
+        description: 'Your browser does not support voice recognition.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognitionAPI = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognitionAPI) {
-        const instance = new SpeechRecognitionAPI();
-        instance.continuous = false;
-        instance.interimResults = false;
+    // Initialize SpeechRecognition only if it's not already initialized
+    if (!recognitionRef.current) {
+      const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognition = new SpeechRecognitionAPI();
+      recognitionRef.current = recognition;
 
-        instance.onresult = async (event) => {
-          const transcript = event.results[0][0].transcript;
-          if (transcript.trim()) {
-            // Clear input field
-            setInputValue('');
-            
-            // Send the transcription directly for processing
-            onSendMessage(transcript);
-          }
-        };
+      // Configure recognition
+      recognition.continuous = false;
+      recognition.interimResults = false;
 
-        instance.onerror = (event) => {
-          let errorMsg = 'An unknown voice recognition error occurred.';
-          if (event.error === 'no-speech') {
+      // Set up event handlers
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript.trim()) {
+          onSendMessage(transcript);
+        }
+      };
+
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        let errorMsg = 'An unknown voice recognition error occurred.';
+        switch (event.error) {
+          case 'no-speech':
             errorMsg = 'No speech was detected. Please try again.';
-          } else if (event.error === 'audio-capture') {
-            errorMsg = 'Microphone not available. Check browser/system settings.';
-          } else if (event.error === 'not-allowed') {
+            break;
+          case 'audio-capture':
+            errorMsg = 'Microphone not available. Please check your microphone connection and settings.';
+            break;
+          case 'not-allowed':
             errorMsg = 'Microphone access denied. Please allow microphone access in browser settings.';
-          } else {
+            break;
+          case 'aborted':
+            errorMsg = 'Voice recognition was aborted.';
+            break;
+          case 'network':
+            errorMsg = 'Network error occurred during voice recognition.';
+            break;
+          case 'bad-grammar':
+            errorMsg = 'Invalid grammar for voice recognition.';
+            break;
+          case 'language-not-supported':
+            errorMsg = 'Selected language is not supported for voice recognition.';
+            break;
+          default:
             errorMsg = `Error: ${event.error}`;
-          }
-          toast({
-            title: 'Voice Recognition Error',
-            description: errorMsg,
-            variant: 'destructive',
-          });
-          setIsRecording(false);
-        };
+        }
+        
+        toast({
+          title: 'Voice Recognition Error',
+          description: errorMsg,
+          variant: 'destructive',
+        });
+      };
 
-        instance.onend = () => {
-          setIsRecording(false);
-          // Clear input field when recording ends
-          setInputValue('');
-        };
-        recognitionRef.current = instance;
-      }
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
     }
 
+    // Update language only when it changes
+    if (recognitionRef.current) {
+      recognitionRef.current.lang = currentLanguage === 'en' ? 'en-US' : 'te-IN';
+    }
+
+    // Cleanup function
     return () => {
       if (recognitionRef.current) {
-        recognitionRef.current.onresult = null;
-        recognitionRef.current.onerror = null;
-        recognitionRef.current.onend = null;
         recognitionRef.current.stop();
+        recognitionRef.current = null;
       }
     };
-  }, [toast]);
+  }, [currentLanguage, onSendMessage, setIsRecording, toast]);
+
+  // Effect 2: Manages STARTING and STOPPING the recognition.
+  // This reacts only to the `isRecording` state.
+  useEffect(() => {
+    const recognition = recognitionRef.current;
+    if (!recognition) return;
+
+    if (isRecording) {
+      // Check if it's not already active before starting
+      if (recognition.state === 'inactive') {
+        try {
+          recognition.start();
+        } catch (e) {
+          console.error("Error starting recognition in effect:", e);
+          toast({
+            title: 'Could Not Start Recording',
+            description: 'There was an issue activating the microphone.',
+            variant: 'destructive',
+          });
+          setIsRecording(false); // Reset state on error
+          return; // Exit early to prevent further execution
+        }
+      }
+    } else {
+      // Check if it's active before stopping
+      if (recognition.state !== 'inactive') {
+        try {
+          recognition.stop();
+        } catch (e) {
+          console.error("Error stopping recognition:", e);
+          toast({
+            title: 'Could Not Stop Recording',
+            description: 'There was an issue stopping the microphone.',
+            variant: 'destructive',
+          });
+        }
+      }
+    }
+    // No setIsRecording in dependency array to prevent potential loops if onend also calls it.
+    // The onend handler is the source of truth for the final state.
+  }, [isRecording, toast]);
 
 
   const handleSubmit = (e: FormEvent) => {
@@ -121,40 +181,24 @@ export default function ChatInput({
   };
 
   const handleLanguageToggle = () => {
-    if (!isCapturingLead) { // Disable during lead capture
-      onLanguageChange(currentLanguage === 'en' ? 'te' : 'en');
-    }
+    onLanguageChange(currentLanguage === 'en' ? 'te' : 'en');
   };
 
   const handleMicClick = () => {
-    if (isCapturingLead) return; // Disable during lead capture
+    if (isCapturingLead || isSending) return;
 
     if (!recognitionRef.current) {
       toast({
-        title: 'Unsupported Feature',
-        description: 'Voice recognition is not supported by your browser.',
+        title: 'Voice Recognition Not Available',
+        description: 'Your browser may not support this feature.',
         variant: 'destructive',
       });
       return;
     }
 
-    if (isRecording) {
-      recognitionRef.current.stop();
-    } else {
-      recognitionRef.current.lang = currentLanguage === 'en' ? 'en-US' : 'te-IN';
-      try {
-        recognitionRef.current.start();
-        setIsRecording(true);
-      } catch (e) {
-        console.error("Error starting speech recognition:", e);
-        toast({
-            title: 'Voice Recognition Error',
-            description: 'Could not start voice recognition. Please ensure microphone permission is granted.',
-            variant: 'destructive',
-          });
-        setIsRecording(false);
-      }
-    }
+    // The only job of the click handler is to toggle the state.
+    // The useEffect hooks will handle the rest.
+    setIsRecording(!isRecording);
   };
 
   return (
@@ -171,10 +215,10 @@ export default function ChatInput({
               size="icon"
               onClick={handleLanguageToggle}
               aria-label={currentLanguage === 'en' ? 'Switch to Telugu' : 'Switch to English'}
-              disabled={isSending || isRecording || isCapturingLead} // Disabled during lead capture
+              disabled={isSending || isRecording}
             >
-              <Languages size={20} />
-              <span className="sr-only">{currentLanguage === 'en' ? 'తెలుగు' : 'English'}</span>
+              {/* Using text for language indicator */}
+              <span className="text-xl font-semibold">{currentLanguage === 'en' ? 'తె' : 'EN'}</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -187,9 +231,9 @@ export default function ChatInput({
         type="text"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
-        placeholder={inputPlaceholder}
+        placeholder="Type a message or use the mic..."
         className="flex-grow font-body"
-        disabled={isSending || isRecording} // Input field itself is not disabled by isCapturingLead
+        disabled={isSending || isRecording}
         aria-label="Chat message input"
       />
       <TooltipProvider>
@@ -200,14 +244,14 @@ export default function ChatInput({
               variant={isRecording ? "destructive" : "outline"}
               size="icon"
               onClick={handleMicClick}
-              disabled={isSending || isCapturingLead} // Disabled during lead capture
+              disabled={isSending || isCapturingLead}
               aria-label={isRecording ? 'Stop voice input' : 'Start voice input'}
             >
               {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>{isRecording ? 'Stop voice input' : 'Start voice input (Beta)'}</p>
+            <p>{isRecording ? 'Stop voice input' : 'Start voice input'}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

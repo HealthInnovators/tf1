@@ -7,6 +7,13 @@ import TeraAvatar from '@/components/icons/TeraAvatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
+// In ChatMessage.tsx
+const botIcon = (
+  <div className="flex items-center justify-center w-8 h-8">
+    <img src="/images/custom-icon.png" alt="Bot Icon" className="h-6 w-6" />
+  </div>
+);
+
 interface ChatMessageProps {
   message: Message;
 }
@@ -14,7 +21,7 @@ interface ChatMessageProps {
 export default function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.sender === 'user';
   const alignment = isUser ? 'items-end' : 'items-start';
-  const bubbleColor = isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground';
+  const bubbleColor = isUser ? 'bg-primary text-primary-foreground' : 'bg-primary text-primary-foreground';
   const textAlign = isUser ? 'text-right' : 'text-left';
 
   return (
@@ -26,7 +33,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
               <User size={24} />
             </AvatarFallback>
           ) : (
-            <TeraAvatar />
+            <AvatarImage src="/images/tera-icon.png" className="rounded-full" />
           )}
         </Avatar>
         <div

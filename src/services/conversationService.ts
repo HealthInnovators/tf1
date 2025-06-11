@@ -44,7 +44,7 @@ export async function getOrCreateConversation(
   } catch (e: unknown) {
     console.error('Error in getOrCreateConversation:', e);
     const errorMessage = e instanceof Error ? e.message : 'Unknown database error.';
-    return { id: -1, error: `Database error: ${errorMessage}` };
+    return { id: -1, error: `Failed to create conversation: ${errorMessage}` };
   } finally {
     if (client) {
       client.release();

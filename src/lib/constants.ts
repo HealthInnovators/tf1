@@ -45,26 +45,4 @@ export const FAQ_CONTENT_TE = `
 export const UNKNOWN_ANSWER_PHRASES_EN = ["i do not know", "i don't know", "unable to answer", "cannot find information"];
 export const UNKNOWN_ANSWER_PHRASES_TE = ["నాకు తెలియదు", "సమాధానం చెప్పలేను", "సమాచారం కనుగొనబడలేదు"];
 
-// Lead Capture Prompts
-export const LEAD_CAPTURE_NAME_PROMPT_EN = "Welcome to T-Fiber support! To get started, could you please tell me your name?";
-export const LEAD_CAPTURE_NAME_PROMPT_TE = "T-ఫైబర్ మద్దతుకు స్వాగతం! ప్రారంభించడానికి, దయచేసి మీ పేరు చెప్పగలరా?";
 
-export const LEAD_CAPTURE_PHONE_PROMPT_EN = (name: string) => `Thanks, ${name}! What's your 10-digit mobile number?`;
-export const LEAD_CAPTURE_PHONE_PROMPT_TE = (name: string) => `ధన్యవాదాలు, ${name}! మీ 10-అంకెల మొబైల్ నంబర్ ఏమిటి?`;
-
-export const LEAD_CAPTURE_THANKS_EN = "Thank you! Your details have been noted.";
-export const LEAD_CAPTURE_THANKS_TE = "ధన్యవాదాలు! మీ వివరాలు నమోదు చేయబడ్డాయి.";
-
-export const LEAD_CAPTURE_INVALID_PHONE_EN = "Please enter a valid 10-digit mobile number.";
-export const LEAD_CAPTURE_INVALID_PHONE_TE = "దయచేసి చెల్లుబాటు అయ్యే 10-అంకెల మొబైల్ నంబర్‌ను నమోదు చేయండి.";
-
-export const LEAD_CAPTURE_SAVE_SUCCESS_EN = "Information saved successfully!";
-export const LEAD_CAPTURE_SAVE_SUCCESS_TE = "సమాచారం విజయవంతంగా సేవ్ చేయబడింది!";
-
-export const LEAD_CAPTURE_SAVE_ERROR_EN = "Sorry, there was an issue saving your details. Please try again.";
-export const LEAD_CAPTURE_SAVE_ERROR_TE = "క్షమించండి, మీ వివరాలను సేవ్ చేయడంలో సమస్య ఉంది. దయచేసి మళ్ళీ ప్రయత్నించండి.";
-
-export const LEAD_CAPTURE_NAME_PLACEHOLDER_EN = "Enter your full name";
-export const LEAD_CAPTURE_NAME_PLACEHOLDER_TE = "మీ పూర్తి పేరు నమోదు చేయండి";
-export const LEAD_CAPTURE_PHONE_PLACEHOLDER_EN = "Enter your 10-digit mobile number";
-export const LEAD_CAPTURE_PHONE_PLACEHOLDER_TE = "మీ 10-అంకెల మొబైల్ నంబర్‌ను నమోదు చేయండి";

@@ -39,22 +39,7 @@ export interface ConversationFromDB {
   last_activity_at: Date;
 }
 
-// For database representation of a lead
-export interface LeadFromDB {
-  id: number;
-  name: string;
-  phone_number: string; // Should be unique
-  language_preference: Language | null;
-  created_at: Date;
-  updated_at: Date;
-}
 
-// Return type for saveLead function
-export interface SaveLeadResult {
-  success: boolean;
-  leadId?: number;
-  error?: string;
-}
 
 // Return type for getOrCreateConversation
 export interface GetOrCreateConversationResult {
